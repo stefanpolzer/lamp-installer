@@ -1,5 +1,7 @@
-apt-get update;
-apt-get upgrade;
+#!/bin/sh
+
+apt-get -y update;
+apt-get -y upgrade;
 
 # install apache2.4+
 apt-get -y install apache2;
@@ -31,22 +33,12 @@ while true; do
     esac
 done
 
-# install composer
-while true; do
-    read -p "Do you wish to install composer?" yn
-    case $yn in
-        [Yy]* ) apt-get -y install composer; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer [y]es or [n]o.";;
-    esac
-done
-
 # add repoisoty
-$php_version="7.0";
+php_version="7.0";
 while true; do
     read -p "Do you wish add repository ppa:ondrej/php (requiert for php 7.1)?" yn
     case $yn in
-		$php_version="7.1";
+		php_version="7.1";
         [Yy]* ) apt-get -y install software-properties-common python-software-properties; add-apt-repository ppa:ondrej/php; break;;
         [Nn]* ) break;;
         * ) echo "Please answer [y]es or [n]o.";;
@@ -95,3 +87,13 @@ else
 	apt-get -y install php7.0-zip;
 	apt-get -y install php7.0-curl;
 fi
+
+# install composer
+while true; do
+    read -p "Do you wish to install composer?" yn
+    case $yn in
+        [Yy]* ) apt-get -y install composer; break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer [y]es or [n]o.";;
+    esac
+done
