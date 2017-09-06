@@ -38,8 +38,7 @@ php_version="7.0";
 while true; do
     read -p "Do you wish add repository ppa:ondrej/php (requiert for php 7.1)?" yn
     case $yn in
-		php_version="7.1";
-        [Yy]* ) apt-get -y install software-properties-common python-software-properties; add-apt-repository ppa:ondrej/php; break;;
+        [Yy]* ) apt-get -y install software-properties-common python-software-properties; add-apt-repository ppa:ondrej/php; php_version="7.1"; break;;
         [Nn]* ) break;;
         * ) echo "Please answer [y]es or [n]o.";;
     esac
