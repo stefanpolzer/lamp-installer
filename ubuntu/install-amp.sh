@@ -26,7 +26,7 @@ mysql_secure_installation;
 while true; do
     read -p "Do you wish to remove older php versions first" yn
     case $yn in
-        [Yy] ) apt-get remove '^php'; apt-get remove '^libapache2-mod-php'; break;;
+        [Yy] ) apt-get remove '^php5' '^php7\.' '^libapache2-mod-php' '^libapache2-mod-fastcgi' ; break;;
         [Nn] ) break;;
         * ) echo "Please answer [y] for yes or [n] for no.";;
     esac
@@ -44,17 +44,35 @@ while true; do
 done
 
 while true; do
-    read -p "Do you wish to install php-[f]pm , apache2-[m]od or [b]oth?" yn
-    case $yn in
+    read -p "Do you wish to install php-[f]pm , apache2-[m]od or [b]oth?" php_module
+    case $php_module in
 		[Mm] ) apt-get -y install libapache2-mod-php$php_version; break;;
-		[Ff] ) apt-get -y install php$php_version-fpm libapache2-mod-fastcgi; a2enmod actions fastcgi alias; break;;
-		[Bb] ) apt-get -y install php$php_version-fpm libapache2-mod-fastcgi libapache2-mod-php$php_version; a2enmod actions fastcgi alias; break;;
+		[Ff] ) apt-get -y install php$php_version-fpm libapache2-mod-fastcgi; break;;
+		[Bb] ) apt-get -y install php$php_version-fpm libapache2-mod-fastcgi libapache2-mod-php$php_version; break;;
         * ) echo "Please answer [f] for  php-fpm, [m] for libapache2-mod-php or [b] for both.";;
     esac
 done
 
-echo '### install php module packages ###';
+case $php_module in
+	[FfBb] ) a2enmod actions proxy_fcgi fastcgi alias setenvif; a2enconf php$php_version-fpm;;
+esac
+
+echo '### Restart Apache server ###';
+service apache2 restart;
+
+echo '### install php mysql packages ###';
 apt-get -y install php$php_version-mysql;
+
+while true; do
+    read -p "Do you wish enable PHP PDO MySql Module?" yn
+    case $yn in
+        [Yy] ) phpenmod pdo_mysql;; break;;
+        [Nn] ) break;;
+        * ) echo "Please answer [y] for yes or [n] for no.";;
+    esac
+done
+
+echo '### install additional php packages ###';
 apt-get -y install php$php_version-xml;
 
 ## regiert vor laravel
@@ -73,6 +91,15 @@ while true; do
     read -p "Do you wish enable Apache2 RewriteEngin?" yn
     case $yn in
         [Yy] ) a2enmod rewrite; break;;
+        [Nn] ) break;;
+        * ) echo "Please answer [y] for yes or [n] for no.";;
+    esac
+done
+
+while true; do
+    read -p "Do you wish enable Apache2 ssl?" yn
+    case $yn in
+        [Yy] ) a2enmod ssl; break;;
         [Nn] ) break;;
         * ) echo "Please answer [y] for yes or [n] for no.";;
     esac
