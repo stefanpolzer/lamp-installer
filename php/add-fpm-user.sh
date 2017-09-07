@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ## get first parameter
-if [ $1 = "" ]
+if [ -z "$1" ]
 	then echo "Wrong syntax: add-fpm-user [username]"; exit;
 	else username=$1;
 fi
