@@ -72,7 +72,8 @@ if [ "$password_status" = "P" ]
 		done
 fi
 
-fpm_file="/etc/php/$php_version/fpm/pool.d/$username.conf";
+fpm_path="/etc/php/$php_version/fpm/pool.d";
+fpm_file="$fpm_path/$username.conf";
 touch $fpm_file;
 
 fpm_file_content="[$username]
@@ -89,5 +90,14 @@ fpm_file_content="[$username]
     pm.max_spare_servers = 3";
 
 echo "$fpm_file_content" > "$fpm_file";
+
+while true; do
+	read -p "Do you wish to disable default fpm config (www.conf)?" yn
+	case $yn in
+		[Yy] ) mv $fpm_path/www.conf $fpm_path/www.conf.disabled > /dev/null 2>&1; break;;
+		[Nn] ) break;;
+		* ) echo "Please answer [y] for yes or [n] for no.";;
+	esac
+done
 
 service php$php_version-fpm reload;
