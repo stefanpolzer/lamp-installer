@@ -1,13 +1,14 @@
 #!/bin/sh
 
 # Color green
-GREEN='\033[0;32m'
+GREEN='\033[0;32m';
 # Color red
-RED='\033[0;31m'
+RED='\033[0;31m';
 # No Color
-NC='\033[0m'
-APACHE_LOG_DIR="/var/log/apache2";
+NC='\033[0m';
 
+# set default Apache log dir; ToDo get it from apache
+APACHE_LOG_DIR="/var/log/apache2";
 
 # get the user name and domain
 if [ -z "$1" ] || [ -z "$2" ]

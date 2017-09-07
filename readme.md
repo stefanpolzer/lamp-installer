@@ -16,16 +16,30 @@ You have the option between php-fpm , apache2-mod or both.
 You can also choose if you want to enable Apache2 RewriteEngin and/or SSL  
 At the end you can optional install vim, git, composer and phpmyadmin.  
 
-### Add new PHP-FPM user
+### Add new Apache VirtualHost for php-fpm
 1) Get the Script form Github
 ```
-wget https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/php/add-fpm-user.sh
+wget https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/add-php-fpm-vhost.sh
 ```
 2) Change the file permission
 ```
-chmod +x add-fpm-user.sh
+chmod +x add-php-fpm-vhost.sh
 ```
 3) Run the shell script
 ```
-sudo ./add-fpm-user.sh
+sudo ./add-php-fpm-vhost.sh username [www.]domain.com
+```
+
+### Add new Apache VirtualHost for libapache2-mod-php
+1) Get the Script form Github
+```
+wget https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/add-libapache2-mod-php-vhost.sh
+```
+2) Change the file permission
+```
+chmod +x add-libapache2-mod-php-vhost.sh
+```
+3) Run the shell script
+```
+sudo ./add-libapache2-mod-php-vhost.sh username [www.]domain.com
 ```
