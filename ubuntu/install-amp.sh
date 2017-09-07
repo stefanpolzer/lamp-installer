@@ -54,15 +54,29 @@ while true; do
 	esac
 done
 
-case $php_module in
-	[FfBb] )
-			echo '### enable apache2 fastcgi modules ###';
-			a2enmod actions proxy_fcgi fastcgi alias setenvif;
-			a2enconf php$php_version-fpm;;
-esac
+fpm_path="/etc/php/$php_version/fpm/pool.d";
+
+(echo "$php_module" | grep -Eq "^[FfBb]\$");
+if [ $? -eq 0 ]
+	then
+		echo '### enable apache2 fastcgi modules ###';
+		a2enmod actions proxy_fcgi fastcgi alias setenvif;
+		a2enconf php$php_version-fpm;
+		while true; do
+			read -p "Do you wish to disable default fpm config (www.conf)?" yn
+			case $yn in
+				[Yy] ) mv $fpm_path/www.conf $fpm_path/www.conf.disabled > /dev/null 2>&1; break;;
+				[Nn] ) break;;
+				* ) echo "Please answer [y] for yes or [n] for no.";;
+			esac
+		done
+fi
 
 echo '### Restart Apache server ###';
 service apache2 restart;
+
+echo '### Restart PHP FPM service ###';
+service php$php_version-fpm restart;
 
 echo '### install php mysql packages ###';
 apt-get -y install php$php_version-mysql;
