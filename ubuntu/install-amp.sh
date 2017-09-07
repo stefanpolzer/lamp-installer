@@ -43,6 +43,7 @@ while true; do
     esac
 done
 
+php_module="";
 while true; do
     read -p "Do you wish to install php-[f]pm , apache2-[m]od or [b]oth?" php_module
     case $php_module in
@@ -54,7 +55,10 @@ while true; do
 done
 
 case $php_module in
-	[FfBb] ) a2enmod actions proxy_fcgi fastcgi alias setenvif; a2enconf php$php_version-fpm;;
+	[FfBb] )
+			echo '### enable apache2 fastcgi modules ###';
+			a2enmod actions proxy_fcgi fastcgi alias setenvif;
+			a2enconf php$php_version-fpm;;
 esac
 
 echo '### Restart Apache server ###';
@@ -66,7 +70,7 @@ apt-get -y install php$php_version-mysql;
 while true; do
     read -p "Do you wish enable PHP PDO MySql Module?" yn
     case $yn in
-        [Yy] ) phpenmod pdo_mysql;; break;;
+        [Yy] ) phpenmod pdo_mysql; break;;
         [Nn] ) break;;
         * ) echo "Please answer [y] for yes or [n] for no.";;
     esac
