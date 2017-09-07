@@ -1,35 +1,34 @@
 #!/bin/sh
 
+# get latest package info
+echo '### get latest package info ###';
 apt-get -y update;
+
+# update curent system first
+echo '### update curent system ###';
 apt-get -y upgrade;
 
 # install apache2.4+
+echo '### install Apache2.4+ ###';
 apt-get -y install apache2;
 
 # install mysql5.7+
+echo '### install MySql Server 5.7+ ###';
 apt-get -y install mysql-server;
 
 #configure mysql
+echo '### MySql server status: ###';
 systemctl status mysql;
+echo '### MySql secure server ###';
 mysql_secure_installation;
 
-# install vim
+# de-install all php verion
 while true; do
-    read -p "Do you wish to install vim?" yn
+    read -p "Do you wish to remove older php versions first" yn
     case $yn in
-        [Yy]* ) apt-get -y install vim; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer [y]es or [n]o.";;
-    esac
-done
-
-# install git
-while true; do
-    read -p "Do you wish to install git?" yn
-    case $yn in
-        [Yy]* ) apt-get -y install git; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer [y]es or [n]o.";;
+        [Yy] ) apt-get remove '^php'; apt-get remove '^libapache2-mod-php'; break;;
+        [Nn] ) break;;
+        * ) echo "Please answer [y] for yes or [n] for no.";;
     esac
 done
 
@@ -38,61 +37,78 @@ php_version="7.0";
 while true; do
     read -p "Do you wish add repository ppa:ondrej/php (requiert for php 7.1)?" yn
     case $yn in
-        [Yy]* ) apt-get -y install software-properties-common python-software-properties; add-apt-repository ppa:ondrej/php; php_version="7.1"; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer [y]es or [n]o.";;
+        [Yy] ) add-apt-repository ppa:ondrej/php; apt-get update; php_version="7.1"; break;;
+        [Nn] ) break;;
+        * ) echo "Please answer [y] for yes or [n] for no.";;
     esac
 done
 
-# de-install all php verion
 while true; do
-    read -p "Do you wish remove all php" yn
+    read -p "Do you wish to install php-[f]pm , apache2-[m]od or [b]oth?" yn
     case $yn in
-        [Yy]* ) apt-get remove php* ; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer [y]es or [n]o.";;
+		[Mm] ) apt-get -y install libapache2-mod-php$php_version; break;;
+		[Ff] ) apt-get -y install php$php_version-fpm libapache2-mod-fastcgi; a2enmod actions fastcgi alias; break;;
+		[Bb] ) apt-get -y install php$php_version-fpm libapache2-mod-fastcgi libapache2-mod-php$php_version; a2enmod actions fastcgi alias; break;;
+        * ) echo "Please answer [f] for  php-fpm, [m] for libapache2-mod-php or [b] for both.";;
     esac
 done
 
-apt-get -y install libapache2-mod-fastcgi;
-a2enmod actions fastcgi alias;
+echo '### install php module packages ###';
+apt-get -y install php$php_version-mysql;
+apt-get -y install php$php_version-xml;
+
+## regiert vor laravel
+apt-get -y install php$php_version-mbstring;
+phpenmod mbstring;
+apt-get -y install php$php_version-mcrypt;
+phpenmod mcrypt;
+apt-get -y install php$php_version-curl;
+apt-get -y install php$php_version-intl;
+
+## Maybe make some modules optional
+apt-get -y install php$php_version-gd;
+apt-get -y install php$php_version-zip;
+
+while true; do
+    read -p "Do you wish enable Apache2 RewriteEngin?" yn
+    case $yn in
+        [Yy] ) a2enmod rewrite; break;;
+        [Nn] ) break;;
+        * ) echo "Please answer [y] for yes or [n] for no.";;
+    esac
+done
+
+echo '### Restart Apache server ###';
 service apache2 restart;
 
-if [ $php_version = "7.1" ]; then
-	apt-get -y install php7.1;
-	apt-get -y install php7.1-fpm;
-	apt-get -y install php7.1-cli;
-	apt-get -y install php7.1-common;
-	apt-get -y install php7.1-mbstring;
-	apt-get -y install php7.1-gd;
-	apt-get -y install php7.1-intl;
-	apt-get -y install php7.1-xml;
-	apt-get -y install php7.1-mysql;
-	apt-get -y install php7.1-mcrypt;
-	apt-get -y install php7.1-zip;
-	apt-get -y install php7.1-curl;
-	
-else
-	apt-get -y install php7.0;
-	apt-get -y install php7.0-fpm;
-	apt-get -y install php7.0-cli;
-	apt-get -y install php7.0-common;
-	apt-get -y install php7.0-mbstring;
-	apt-get -y install php7.0-gd;
-	apt-get -y install php7.0-intl;
-	apt-get -y install php7.0-xml;
-	apt-get -y install php7.0-mysql;
-	apt-get -y install php7.0-mcrypt;
-	apt-get -y install php7.0-zip;
-	apt-get -y install php7.0-curl;
-fi
+## Optional packages
+
+# install vim
+while true; do
+    read -p "Do you wish to install vim?" yn
+    case $yn in
+        [Yy] ) apt-get -y install vim; break;;
+        [Nn] ) break;;
+        * ) echo "Please answer [y] for yes or [n] for no.";;
+    esac
+done
+
+# install git
+while true; do
+    read -p "Do you wish to install git?" yn
+    case $yn in
+        [Yy] ) apt-get -y install git; break;;
+        [Nn] ) break;;
+        * ) echo "Please answer [y] for yes or [n] for no.";;
+    esac
+done
 
 # install composer
 while true; do
     read -p "Do you wish to install composer?" yn
     case $yn in
-        [Yy]* ) apt-get -y install composer; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer [y]es or [n]o.";;
+        [Yy] ) apt-get -y install composer; break;;
+        [Nn] ) break;;
+        * ) echo "Please answer [y] for yes or [n] for no.";;
     esac
 done
