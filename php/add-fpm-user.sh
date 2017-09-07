@@ -1,9 +1,9 @@
 #!/bin/sh
 
-username=$1;
-
-if [ $username = "" ] ; then
-	echo "Wrong syntay: add-fpm-user [username]";
+## get first parameter
+if [ $1 = "" ]
+	then echo "Wrong syntax: add-fpm-user [username]"; exit;
+	else username=$1;
 fi
 
 (echo "$username" | grep -Eq  "^[a-z][a-z0-9]{2,14}$") || (echo "User did not match credentials. Only a-z and numbers, start with a character and a total length between 3 and 15."; exit;);
