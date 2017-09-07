@@ -1,89 +1,98 @@
 #!/bin/sh
 
+# Color green
+GREEN='\033[0;32m'
+# Color red
+RED='\033[0;31m'
+# No Color
+NC='\033[0m'
+
 # get latest package info
-echo '### get latest package info ###';
+echo "### get latest package info ###";
 apt-get -y update;
 
 # update curent system first
-echo '### update curent system ###';
+echo "### update curent system ###";
 apt-get -y upgrade;
 
 # install apache2.4+
-echo '### install Apache2.4+ ###';
+echo "### install Apache2.4+ ###";
 apt-get -y install apache2;
 
 # install mysql5.7+
-echo '### install MySql Server 5.7+ ###';
+echo "### install MySql Server 5.7+ ###";
 apt-get -y install mysql-server;
 
-#configure mysql
-echo '### MySql server status: ###';
+# restart mysql
+echo "### restart MySql server ###";
+service mysql restart;
+
+# show mysql status
+echo "### MySql server status: ###";
 systemctl status mysql;
-echo '### MySql secure server ###';
-mysql_secure_installation;
 
 # de-install all php verion
 while true; do
-	read -p "Do you wish to remove older php versions first" yn
+	read -p "Do you wish to remove older php versions first? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
 		[Yy] ) apt-get remove '^php5' '^php7\.' '^libapache2-mod-php' '^libapache2-mod-fastcgi' ; break;;
 		[Nn] ) break;;
-		* ) echo "Please answer [y] for yes or [n] for no.";;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 	esac
 done
 
 # add repoisoty
 php_version="7.0";
 while true; do
-	read -p "Do you wish add repository ppa:ondrej/php (requiert for php 7.1)?" yn
+	read -p "Do you wish add repository ppa:ondrej/php [requiert for php 7.1]? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
 		[Yy] ) add-apt-repository ppa:ondrej/php; apt-get update; php_version="7.1"; break;;
 		[Nn] ) break;;
-		* ) echo "Please answer [y] for yes or [n] for no.";;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 	esac
 done
 
 php_module="";
 while true; do
-	read -p "Do you wish to install php-[f]pm , apache2-[m]od or [b]oth?" php_module
+	read -p "Do you wish to install php-[f]pm , apache2-[m]od or [b]oth? : " php_module
 	case $php_module in
-		[Mm] ) apt-get -y install libapache2-mod-php$php_version; break;;
+		[Mm] ) apt-get -y install libapache2-mod-php$php_version libapache2-mod-auth-mysql; break;;
 		[Ff] ) apt-get -y install php$php_version-fpm libapache2-mod-fastcgi; break;;
 		[Bb] ) apt-get -y install php$php_version-fpm libapache2-mod-fastcgi libapache2-mod-php$php_version; break;;
-		* ) echo "Please answer [f] for  php-fpm, [m] for libapache2-mod-php or [b] for both.";;
+		* ) echo "${RED}Please answer [f] for  php-fpm, [m] for libapache2-mod-php or [b] for both.${NC}";;
 	esac
 done
 
 (echo "$php_module" | grep -Eq "^[FfBb]\$");
 if [ $? -eq 0 ]
 	then
-		echo '### enable apache2 fastcgi modules ###';
+		echo "### enable apache2 fastcgi modules ###";
 		a2enmod actions proxy_fcgi fastcgi alias setenvif;
 		a2enconf php$php_version-fpm;
 fi
 
-echo '### Restart Apache server ###';
+echo "### Restart Apache server ###";
 service apache2 restart;
 
-echo '### Restart PHP FPM service ###';
+echo "### Restart PHP FPM service ###";
 service php$php_version-fpm restart;
 
-echo '### install php mysql packages ###';
+echo "### install php mysql packages ###";
 apt-get -y install php$php_version-mysql;
 
 while true; do
-	read -p "Do you wish enable PHP PDO MySql Module?" yn
+	read -p "Do you wish enable PHP PDO MySql Module? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
 		[Yy] ) phpenmod pdo_mysql; break;;
 		[Nn] ) break;;
-		* ) echo "Please answer [y] for yes or [n] for no.";;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 	esac
 done
 
-echo '### install additional php packages ###';
+echo "### install additional php packages ###";
 apt-get -y install php$php_version-xml;
 
-## regiert vor laravel
+# regiert vor laravel
 apt-get -y install php$php_version-mbstring;
 phpenmod mbstring;
 apt-get -y install php$php_version-mcrypt;
@@ -91,59 +100,76 @@ phpenmod mcrypt;
 apt-get -y install php$php_version-curl;
 apt-get -y install php$php_version-intl;
 
-## Maybe make some modules optional
+# Maybe make some modules optional
 apt-get -y install php$php_version-gd;
 apt-get -y install php$php_version-zip;
 
 while true; do
-	read -p "Do you wish enable Apache2 RewriteEngin?" yn
+	read -p "Do you wish enable Apache2 RewriteEngin? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
 		[Yy] ) a2enmod rewrite; break;;
 		[Nn] ) break;;
-		* ) echo "Please answer [y] for yes or [n] for no.";;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 	esac
 done
 
 while true; do
-	read -p "Do you wish enable Apache2 ssl?" yn
+	read -p "Do you wish enable Apache2 SSL? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
 		[Yy] ) a2enmod ssl; break;;
 		[Nn] ) break;;
-		* ) echo "Please answer [y] for yes or [n] for no.";;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 	esac
 done
 
-echo '### Restart Apache server ###';
+echo "### Restart Apache server ###";
 service apache2 restart;
 
-## Optional packages
+# Optional packages
 
 # install vim
 while true; do
-	read -p "Do you wish to install vim?" yn
+	read -p "Do you wish to install vim? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
 		[Yy] ) apt-get -y install vim; break;;
 		[Nn] ) break;;
-		* ) echo "Please answer [y] for yes or [n] for no.";;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 	esac
 done
 
 # install git
 while true; do
-	read -p "Do you wish to install git?" yn
+	read -p "Do you wish to install git? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
 		[Yy] ) apt-get -y install git; break;;
 		[Nn] ) break;;
-		* ) echo "Please answer [y] for yes or [n] for no.";;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 	esac
 done
 
 # install composer
 while true; do
-	read -p "Do you wish to install composer?" yn
+	read -p "Do you wish to install composer? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
 		[Yy] ) apt-get -y install composer; break;;
 		[Nn] ) break;;
-		* ) echo "Please answer [y] for yes or [n] for no.";;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 	esac
 done
+
+# install phpMyAdmin
+while true; do
+	read -p "Do you wish to install phpMyAdmin? (Press y|Y for Yes or n|N for No) : " yn
+	case $yn in
+		[Yy] ) apt-get -y install phpmyadmin; break;;
+		[Nn] ) break;;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+	esac
+done
+
+# secure mysql
+echo "### MySql secure server ###";
+mysql_secure_installation;
+
+# secure phpMyAdmin
+echo "${RED}### Don't forget to protect your phpmyadmin area ###${NC}";

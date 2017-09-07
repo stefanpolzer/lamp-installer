@@ -14,7 +14,7 @@ sudo ./install-amp.sh
 ```
 You have the option between php-fpm , apache2-mod or both.  
 You can also choose if you want to enable Apache2 RewriteEngin and/or SSL  
-At the end you can optional install vim, git and composer.  
+At the end you can optional install vim, git, composer and phpmyadmin.  
 
 ### Add new PHP-FPM user
 1) Get the Script form Github
