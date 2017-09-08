@@ -7,14 +7,12 @@ RED='\033[0;31m';
 # No Color
 NC='\033[0m';
 
-folder="$HOME/lamp-installer" ;
+folder="$HOME/bin";
 mkdir $folder > /dev/null 2>&1;
 mkdir $folder/html > /dev/null 2>&1;
 
-export="export PATH=~/lamp-installer:\$PATH";
-bashrc="$HOME/.bashrc";
-grep -q "$export" "$bashrc" || echo "$export" >> "$bashrc";
 
+## ToDo check if installed so we dont need to use sudo
 apt-get -y install wget > /dev/null 2>&1;
 
 #get lamp-installer.sh
@@ -55,5 +53,3 @@ chmod +x "$folder/install-ssl";
 #get coming-soon.html
 echo "### getting coming-soon.html ###";
 wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/coming-soon.html" -O "$folder/html/coming-soon.html" > /dev/null 2>&1;
-
-exec /bin/bash;

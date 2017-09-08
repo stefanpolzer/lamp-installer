@@ -11,7 +11,7 @@ version="0.0.1";
 
 for i in "$@" ; do
 	if [ "$i" = "--version" ] || [ "$i" = "-v" ] ; then
-		echo "LAMP Installer Version: ${GREEN}$version${GREEN}";
+		echo "LAMP Installer Version: ${GREEN}$version${NC}";
 		exit;
 	fi
 done
@@ -23,7 +23,7 @@ for i in "$@" ; do
 	fi
 done
 
-folder="~/lamp-installer";
+folder="$HOME/bin";
 
 if [ $check = true ] ; then
 	if [ ! -f "$folder/install-amp" ] || [ ! -f "$folder/add-fpm-user" ] || [ ! -f "$folder/new-db" ] || [ ! -f "$folder/add-libapache2-mod-php-vhost" ] || [ ! -f "$folder/add-php-fpm-vhost" ] || [ ! -f "$folder/install-ssl" ] || [ ! -f "$folder/html/coming-soon.html" ]
