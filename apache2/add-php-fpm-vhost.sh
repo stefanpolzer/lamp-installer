@@ -46,7 +46,7 @@ if [ $? -ne 0 ]
 fi
 
 # run add-fpm-user.sh
-add-fpm-user $username;
+~/add-fpm-user.sh $username;
 
 prefix="";
 while true; do
