@@ -45,15 +45,8 @@ if [ $? -ne 0 ]
 		exit;
 fi
 
-#get add-fpm-user.sh
-if [ ! -f ~/add-fpm-user.sh ]; then
-	echo "### getting add-fpm-user.sh ###";
-	wget https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/php/add-fpm-user.sh -P ~;
-	chmod +x ~/add-fpm-user.sh;
-fi
-
 # run add-fpm-user.sh
-~/add-fpm-user.sh $username;
+add-fpm-user $username;
 
 prefix="";
 while true; do
@@ -77,7 +70,6 @@ fi
 if [ ! -f "$/var/www/$username/sites" ]
 	then
 		mkdir "/var/www/$username/sites" > /dev/null 2>&1;
-		chown $username:$username -R "/var/www/$username/sites" > /dev/null 2>&1;
 fi
 
 if [ -f "/var/www/$username/sites/$domain" ]

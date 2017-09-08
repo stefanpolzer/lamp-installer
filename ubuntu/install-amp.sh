@@ -158,10 +158,11 @@ while true; do
 done
 
 # install phpMyAdmin
+is_pma_installed=false;
 while true; do
 	read -p "Do you wish to install phpMyAdmin? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
-		[Yy] ) apt-get -y install phpmyadmin; break;;
+		[Yy] ) apt-get -y install phpmyadmin; is_pma_installed=true; break;;
 		[Nn] ) break;;
 		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 	esac
@@ -172,4 +173,6 @@ echo "### MySql secure server ###";
 mysql_secure_installation;
 
 # secure phpMyAdmin
-echo "${RED}### Don't forget to protect your phpmyadmin area ###${NC}";
+if [ $is_pma_installed = true ] ; then
+	echo "${RED}### Don't forget to protect your phpmyadmin area ###${NC}";
+fi

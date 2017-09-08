@@ -58,7 +58,6 @@ fi
 if [ ! -f "$/var/www/$username/sites" ]
 	then
 		mkdir "/var/www/$username/sites" > /dev/null 2>&1;
-		chown $username:$username -R "/var/www/$username/sites" > /dev/null 2>&1;
 fi
 
 if [ -f "/var/www/$username/sites/$domain" ]
