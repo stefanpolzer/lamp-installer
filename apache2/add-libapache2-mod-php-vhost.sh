@@ -7,7 +7,7 @@ RED='\033[0;31m';
 # No Color
 NC='\033[0m';
 
-# set default Apache log dir; ToDo get it from apache
+# set default Apache log dir; ToDo get it from apache if possible
 APACHE_LOG_DIR="/var/log/apache2";
 
 # get the user name and domain
@@ -55,9 +55,23 @@ if [ -f "$conf_file" ]
 		exit;
 fi
 
-mkdir "/var/www/$username/$domain" > /dev/null 2>&1;
-mkdir "/var/www/$username/$domain/public" > /dev/null 2>&1;
-chown www-data:www-data -R "/var/www/$username/$domain" > /dev/null 2>&1;
+if [ ! -f "$/var/www/$username/sites" ]
+	then
+		mkdir "/var/www/$username/sites" > /dev/null 2>&1;
+		chown $username:$username -R "/var/www/$username/sites" > /dev/null 2>&1;
+fi
+
+if [ -f "/var/www/$username/sites/$domain" ]
+	then
+		echo "${RED}Folder /var/www/$username/sites/$domain aleady exist.${NC}";
+		exit;
+fi
+
+mkdir "/var/www/$username/sites/$domain" > /dev/null 2>&1;
+mkdir "/var/www/$username/sites/$domain/public" > /dev/null 2>&1;
+wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/coming-soon.html" -O "/var/www/$username/sites/$domain/public/index.html";
+
+chown $username:$username -R "/var/www/$username/sites/$domain" > /dev/null 2>&1;
 
 mkdir "$APACHE_LOG_DIR/$domain" > /dev/null 2>&1;
 chown root:adm "$APACHE_LOG_DIR/$domain" > /dev/null 2>&1;
@@ -67,7 +81,7 @@ conf_file_content="<VirtualHost *:80>
         ServerName $domain
 #        ServerAlias $domain
 #        ServerAdmin webmaster@$domain
-        DocumentRoot /var/www/$username/$domain/public
+        DocumentRoot /var/www/$username/sites/$domain/public
 
 #        <IfModule mod_rewrite.c>
 #            RewriteEngine On
@@ -75,7 +89,7 @@ conf_file_content="<VirtualHost *:80>
 #            RewriteRule ^.*$ http://$domain%{REQUEST_URI} [R=301,L]
 #        </IfModule>
 
-        <Directory \"/var/www/$username/$domain/public\">
+        <Directory \"/var/www/$username/sites/$domain/public\">
                 Options -Indexes +FollowSymLinks
                 Require all granted
                 AllowOverride All

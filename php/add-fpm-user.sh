@@ -54,8 +54,8 @@ if [ $? -eq 0 ]
 		fi
 fi
 
-chown $username:$username $home_dir;
-chmod 755 $home_dir;
+chown root:$username $home_dir;
+chmod 775 $home_dir;
 
 # set password for user
 while true; do
