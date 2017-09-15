@@ -7,11 +7,29 @@ RED='\033[0;31m';
 # No Color
 NC='\033[0m';
 
+# configuration:
+web_root="/var/www";
+
+# check if root
+if [ "$(id -u)" -ne 0 ]
+	then
+		echo "${RED}Please run this command as root${NC}";
+		exit 1;
+fi
+
+# check if mysql is installed
+(php -v > /dev/null 2>&1);
+if [ $? -ne 0 ]
+	then
+		echo "${RED}PHP is not installed or not configured correctly${NC}";
+		exit 1;
+fi
+
 # get the user name
 if [ -z "$1" ]
 	then
-		echo "Wrong syntax: add-fpm-user username [\"Full Name\"]";
-		exit;
+		echo "${RED}Wrong syntax: add-php-fpm-user username [fullname]${NC}";
+		exit 1;
 	else
 		username=$1;
 fi
@@ -21,20 +39,26 @@ fi
 if [ $? -ne 0 ]
 	then
 		echo "User did not match credentials. Only a-z and numbers, start with a character and have a total length between 4 and 15.";
-		exit;
+		exit 1;
 fi
 
-# check PHP Version
-php_version="$(php -r '$v = phpversion(); echo substr($v, 0,3);')";
-(echo "$php_version" | grep -Eq "^7\.[0-9]\$");
+# Get PHP Version
+php_major_version="$(php -r '$v = phpversion(); echo substr($v, 0,1);')";
+(echo "$php_major_version" | grep -Eq "^[57]$");
 if [ $? -ne 0 ]
 	then
-		echo "You need PHP version ${RED}7+${NC}";
-		exit;
+		echo "You need ${RED}PHP5${NC} or ${GREEN}PHP7+${NC} installed";
+		exit 1;
+fi
+
+php_version=$php_major_version;
+if [ $php_major_version = "7" ]
+	then
+		php_version="$(php -r '$v = phpversion(); echo substr($v, 0,3);')";
 fi
 
 # create default home directory
-home_dir="/var/www/$username/";
+home_dir="$web_root/$username/";
 mkdir $home_dir > /dev/null 2>&1;
 
 # check if user exists
@@ -59,7 +83,7 @@ chmod 775 $home_dir;
 
 # set password for user
 while true; do
-	read -p "Do you wish to set/change the password for the user \"$username\"? (Press y|Y for Yes or n|N for No) : " yn
+	read -p "Do you wish to set/change a password for the user \"$username\"? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
 		[Yy] ) passwd $username; break;;
 		[Nn] ) break;;

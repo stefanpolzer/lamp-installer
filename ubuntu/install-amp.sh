@@ -7,6 +7,13 @@ RED='\033[0;31m';
 # No Color
 NC='\033[0m';
 
+# check if root
+if [ "$(id -u)" -ne 0 ]
+	then
+		echo "${RED}Please run this command as root${NC}";
+		exit 1;
+fi
+
 # get latest package info
 echo "### get latest package info ###";
 apt-get -y update;
@@ -74,8 +81,12 @@ fi
 echo "### Restart Apache server ###";
 service apache2 restart;
 
-echo "### Restart PHP FPM service ###";
-service php$php_version-fpm restart;
+(echo "$php_module" | grep -Eq "^[FfBb]\$");
+if [ $? -eq 0 ]
+	then
+		echo "### Restart PHP FPM service ###";
+		service php$php_version-fpm restart;
+fi
 
 echo "### install php mysql packages ###";
 apt-get -y install php$php_version-mysql;
@@ -157,6 +168,39 @@ while true; do
 	esac
 done
 
+# install Certbot
+is_certbot_installed=false;
+while true; do
+	read -p "Do you wish to install Certbot to obtain Let's Encrypt - Free SSL/TLS Certificates ? (Press y|Y for Yes or n|N for No) : " yn
+	case $yn in
+		[Yy] ) add-apt-repository ppa:certbot/certbot; apt-get update; apt-get -y install certbot; is_certbot_installed=true; break;;
+		[Nn] ) break;;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+	esac
+done
+
+
+# add Certbot cronjob
+has_certbot_cronjob=true;
+certbot_cronjob="certbot renew --post-hook \"service apache2 reload\"";
+(crontab -l | grep -Eq "$certbot_cronjob");
+if [ $? -ne 0 ]
+	then
+		has_certbot_cronjob=false;
+fi
+
+if [ $is_certbot_installed = true ] && [ $has_certbot_cronjob = false ]
+	then
+		while true; do
+			read -p "Do you with to add cron jobs for Certbot ? (Press y|Y for Yes or n|N for No) : " yn
+			case $yn in
+				[Yy] ) (crontab -l ; echo "0 3 * * * $certbot_cronjob > /dev/null 2>&1;") | crontab -; break;;
+				[Nn] ) break;;
+				* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+			esac
+		done
+fi
+
 # install phpMyAdmin
 is_pma_installed=false;
 while true; do
@@ -173,6 +217,7 @@ echo "### MySql secure server ###";
 mysql_secure_installation;
 
 # secure phpMyAdmin
-if [ $is_pma_installed = true ] ; then
-	echo "${RED}### Don't forget to protect your phpmyadmin area ###${NC}";
+if [ $is_pma_installed = true ]
+	then
+		echo "${RED}### Don't forget to protect your phpmyadmin area ###${NC}";
 fi

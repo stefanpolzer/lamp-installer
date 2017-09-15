@@ -7,49 +7,41 @@ RED='\033[0;31m';
 # No Color
 NC='\033[0m';
 
-folder="$HOME/bin";
-mkdir $folder > /dev/null 2>&1;
-mkdir $folder/html > /dev/null 2>&1;
+# configuration:
+install_folder="/usr/local/sbin";
+resource_location="https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master";
+file_list="";
+file_list="${file_list} apache2/new-apache2-vhost";
+file_list="${file_list} common/lamp-installer";
+file_list="${file_list} mysql/new-mysql-db";
+file_list="${file_list} php/add-php-fpm-user";
+file_list="${file_list} ubuntu/install-amp";
 
+# check if root
+if [ "$(id -u)" -ne 0 ]
+	then
+		echo "${RED}Please run this command as root${NC}";
+		exit 1;
+fi
 
-## ToDo check if installed so we dont need to use sudo
+# create install folder
+mkdir $install_folder > /dev/null 2>&1;
+
+# install wget if not install already
 apt-get -y install wget > /dev/null 2>&1;
 
-#get lamp-installer.sh
-echo "### getting lamp-installer ###";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/common/lamp-installer.sh" -O "$folder/lamp-installer" > /dev/null 2>&1;
-chmod +x "$folder/lamp-installer";
-
-#get install-amp.sh
-echo "### getting install-amp ###";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/ubuntu/install-amp.sh" -O "$folder/install-amp" > /dev/null 2>&1;
-chmod +x "$folder/install-amp";
-
-#get add-fpm-user.sh
-echo "### getting add-fpm-user ###";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/php/add-fpm-user.sh" -O "$folder/add-fpm-user" > /dev/null 2>&1;
-chmod +x "$folder/add-fpm-user";
-
-#get new-db.sh
-echo "### getting new-db ###";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/mysql/new-db.sh" -O "$folder/new-db" > /dev/null 2>&1;
-chmod +x "$folder/new-db";
-
-#get add-libapache2-mod-php-vhost.sh
-echo "### getting add-libapache2-mod-php-vhost ###";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/add-libapache2-mod-php-vhost.sh" -O "$folder/add-libapache2-mod-php-vhost" > /dev/null 2>&1;
-chmod +x "$folder/add-libapache2-mod-php-vhost";
-
-#get add-php-fpm-vhost.sh
-echo "### getting add-php-fpm-vhost.sh ###";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/add-php-fpm-vhost.sh" -O "$folder/add-php-fpm-vhost" > /dev/null 2>&1;
-chmod +x "$folder/add-php-fpm-vhost";
-
-#get install-ssl.sh
-echo "### getting install-ssl ###";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/install-ssl.sh" -O "$folder/install-ssl" > /dev/null 2>&1;
-chmod +x "$folder/install-ssl";
-
-#get coming-soon.html
-echo "### getting coming-soon.html ###";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/coming-soon.html" -O "$folder/html/coming-soon.html" > /dev/null 2>&1;
+# get all files
+for file in ${file_list}
+	do
+		file_name="$(echo $file | awk -F'/' '{print $2}')";
+		echo "### getting $file_name ###";
+		wget -q "$resource_location/$file.sh" -O "$install_folder/$file_name" > /dev/null 2>&1;
+		if [ $? -eq 0 ]
+			then
+				chmod +x "$install_folder/$file_name" > /dev/null 2>&1;
+				echo "${GREEN}Got $file_name successful${NC}";
+			else
+				chmod -x "$install_folder/$file_name" > /dev/null 2>&1;
+				echo "${RED}Error while getting $file_name${NC}";
+		fi
+done

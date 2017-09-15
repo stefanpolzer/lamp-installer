@@ -7,8 +7,17 @@ RED='\033[0;31m';
 # No Color
 NC='\033[0m';
 
-version="0.0.1";
+# configuration:
+version="0.1.0";
+install_folder="/usr/local/sbin";
+file_list="";
+file_list="${file_list} apache2/new-apache2-vhost";
+file_list="${file_list} common/lamp-installer";
+file_list="${file_list} mysql/new-mysql-db";
+file_list="${file_list} php/add-php-fpm-user";
+file_list="${file_list} ubuntu/install-amp";
 
+## show version
 for i in "$@" ; do
 	if [ "$i" = "--version" ] || [ "$i" = "-v" ] ; then
 		echo "LAMP Installer Version: ${GREEN}$version${NC}";
@@ -16,6 +25,7 @@ for i in "$@" ; do
 	fi
 done
 
+## check installation
 check=false;
 for i in "$@" ; do
 	if [ "$i" = "--check" ] || [ "$i" = "-c" ] ; then
@@ -23,19 +33,24 @@ for i in "$@" ; do
 	fi
 done
 
-folder="$HOME/bin";
-
-if [ $check = true ] ; then
-	if [ ! -f "$folder/install-amp" ] || [ ! -f "$folder/add-fpm-user" ] || [ ! -f "$folder/new-db" ] || [ ! -f "$folder/add-libapache2-mod-php-vhost" ] || [ ! -f "$folder/add-php-fpm-vhost" ] || [ ! -f "$folder/install-ssl" ] || [ ! -f "$folder/html/coming-soon.html" ]
+if [ $check = true ]
 	then
-		echo "${RED}Installation is incomplete.${NC}";
-		exit 1;
-	else
+		# check all files
+		for file in ${file_list}
+			do
+				file_name="$(echo $file | awk -F'/' '{print $2}')";
+				if [ ! -f "$install_folder/$file_name" ]
+					then
+						echo "${RED}Installation is incomplete.${NC}";
+						exit 1;
+				fi
+		done
+
 		echo "${GREEN}Installation is complete.${NC}";
 		exit 0;
-	fi
 fi
 
+# show help
 echo "Usage: lamp-installer [OPTION]";
 echo "";
 echo "Available options:";
