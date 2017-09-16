@@ -8,10 +8,9 @@ RED='\033[0;31m';
 NC='\033[0m';
 
 # check if root
-if [ "$(id -u)" -ne 0 ]
-	then
-		echo "${RED}Please run this command as root${NC}";
-		exit 1;
+if [ "$(id -u)" -ne 0 ] ; then
+	echo "${RED}Please run this command as root${NC}";
+	exit 1;
 fi
 
 # get latest package info
@@ -20,7 +19,7 @@ apt-get -y update;
 
 # update curent system first
 echo "### update curent system ###";
-apt-get -y upgrade;
+apt-get -y dist-upgrade;
 
 # install apache2.4+
 echo "### install Apache2.4+ ###";
@@ -37,6 +36,9 @@ service mysql restart;
 # show mysql status
 echo "### MySql server status: ###";
 systemctl status mysql;
+
+echo "### install common programms: ###";
+apt-get -y install grep awk sed;
 
 # de-install all php verion
 while true; do
@@ -71,21 +73,31 @@ while true; do
 done
 
 (echo "$php_module" | grep -Eq "^[FfBb]\$");
-if [ $? -eq 0 ]
-	then
-		echo "### enable apache2 fastcgi modules ###";
-		a2enmod actions proxy_fcgi fastcgi alias setenvif;
-		a2enconf php$php_version-fpm;
+if [ $? -eq 0 ] ; then
+	echo "### enable apache2 fastcgi modules ###";
+	a2enmod actions proxy_fcgi fastcgi alias setenvif;
+	a2enconf php$php_version-fpm;
 fi
+
+while true; do
+	read -p "Do you wish to disable Apache Web Server Signature? : " yn
+	case $yn in
+		[Yy] )
+			sed -i 's/^ServerSignature\s\+[Oo][Nn]/ServerSignature Off/' /etc/apache2/conf-available/security.conf;
+			sed -i 's/^ServerTokens\s\+[a-zA-Z]\{2,7\}/ServerTokens Prod/' /etc/apache2/conf-available/security.conf;
+			break;;
+		[Nn] ) break;;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+	esac
+done
 
 echo "### Restart Apache server ###";
 service apache2 restart;
 
 (echo "$php_module" | grep -Eq "^[FfBb]\$");
-if [ $? -eq 0 ]
-	then
-		echo "### Restart PHP FPM service ###";
-		service php$php_version-fpm restart;
+if [ $? -eq 0 ] ; then
+	echo "### Restart PHP FPM service ###";
+	service php$php_version-fpm restart;
 fi
 
 echo "### install php mysql packages ###";
@@ -179,26 +191,23 @@ while true; do
 	esac
 done
 
-
 # add Certbot cronjob
 has_certbot_cronjob=true;
 certbot_cronjob="certbot renew --post-hook \"service apache2 reload\"";
 (crontab -l | grep -Eq "$certbot_cronjob");
-if [ $? -ne 0 ]
-	then
-		has_certbot_cronjob=false;
+if [ $? -ne 0 ] ; then
+	has_certbot_cronjob=false;
 fi
 
-if [ $is_certbot_installed = true ] && [ $has_certbot_cronjob = false ]
-	then
-		while true; do
-			read -p "Do you with to add cron jobs for Certbot ? (Press y|Y for Yes or n|N for No) : " yn
-			case $yn in
-				[Yy] ) (crontab -l ; echo "0 3 * * * $certbot_cronjob > /dev/null 2>&1;") | crontab -; break;;
-				[Nn] ) break;;
-				* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
-			esac
-		done
+if [ $is_certbot_installed = true ] && [ $has_certbot_cronjob = false ] ; then
+	while true; do
+		read -p "Do you with to add cron jobs for Certbot ? (Press y|Y for Yes or n|N for No) : " yn
+		case $yn in
+			[Yy] ) (crontab -l ; echo "0 3 * * * $certbot_cronjob > /dev/null 2>&1;") | crontab -; break;;
+			[Nn] ) break;;
+			* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+		esac
+	done
 fi
 
 # install phpMyAdmin
@@ -217,7 +226,6 @@ echo "### MySql secure server ###";
 mysql_secure_installation;
 
 # secure phpMyAdmin
-if [ $is_pma_installed = true ]
-	then
-		echo "${RED}### Don't forget to protect your phpmyadmin area ###${NC}";
+if [ $is_pma_installed = true ] ; then
+	echo "${RED}### Don't forget to protect your phpmyadmin area ###${NC}";
 fi

@@ -18,10 +18,9 @@ file_list="${file_list} php/add-php-fpm-user";
 file_list="${file_list} ubuntu/install-amp";
 
 # check if root
-if [ "$(id -u)" -ne 0 ]
-	then
-		echo "${RED}Please run this command as root${NC}";
-		exit 1;
+if [ "$(id -u)" -ne 0 ] ; then
+	echo "${RED}Please run this command as root${NC}";
+	exit 1;
 fi
 
 # create install folder
@@ -36,12 +35,11 @@ for file in ${file_list}
 		file_name="$(echo $file | awk -F'/' '{print $2}')";
 		echo "### getting $file_name ###";
 		wget -q "$resource_location/$file.sh" -O "$install_folder/$file_name" > /dev/null 2>&1;
-		if [ $? -eq 0 ]
-			then
-				chmod +x "$install_folder/$file_name" > /dev/null 2>&1;
-				echo "${GREEN}Got $file_name successful${NC}";
-			else
-				chmod -x "$install_folder/$file_name" > /dev/null 2>&1;
-				echo "${RED}Error while getting $file_name${NC}";
+		if [ $? -eq 0 ] ; then
+			chmod +x "$install_folder/$file_name" > /dev/null 2>&1;
+			echo "${GREEN}Got $file_name successful${NC}";
+		else
+			chmod -x "$install_folder/$file_name" > /dev/null 2>&1;
+			echo "${RED}Error while getting $file_name${NC}";
 		fi
 done

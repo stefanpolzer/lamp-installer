@@ -33,21 +33,17 @@ for i in "$@" ; do
 	fi
 done
 
-if [ $check = true ]
-	then
-		# check all files
-		for file in ${file_list}
-			do
-				file_name="$(echo $file | awk -F'/' '{print $2}')";
-				if [ ! -f "$install_folder/$file_name" ]
-					then
-						echo "${RED}Installation is incomplete.${NC}";
-						exit 1;
-				fi
-		done
-
-		echo "${GREEN}Installation is complete.${NC}";
-		exit 0;
+if [ $check = true ] ; then
+	# check all files
+	for file in ${file_list} ; do
+		file_name="$(echo $file | awk -F'/' '{print $2}')";
+		if [ ! -f "$install_folder/$file_name" ] ; then
+			echo "${RED}Installation is incomplete.${NC}";
+			exit 1;
+		fi
+	done
+	echo "${GREEN}Installation is complete.${NC}";
+	exit 0;
 fi
 
 # show help
