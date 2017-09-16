@@ -9,35 +9,35 @@ NC='\033[0m';
 
 # check if root
 if [ "$(id -u)" -ne 0 ] ; then
-	echo "${RED}Please run this command as root${NC}";
+	echo "${RED}\nPlease run this command as root\n${NC}";
 	exit 1;
 fi
 
 # get latest package info
-echo "### get latest package info ###";
+echo "${GREEN}### get latest package info ###\n${NC}";
 apt-get -y update;
 
 # update curent system first
-echo "### update curent system ###";
+echo "${GREEN}\n### update curent system ###\n${NC}";
 apt-get -y dist-upgrade;
 
 # install apache2.4+
-echo "### install Apache2.4+ ###";
+echo "${GREEN}\n### install Apache2.4+ ###\n${NC}";
 apt-get -y install apache2;
 
 # install mysql5.7+
-echo "### install MySql Server 5.7+ ###";
+echo "${GREEN}\n### install MySql Server 5.7+ ###\n${NC}";
 apt-get -y install mysql-server;
 
 # restart mysql
-echo "### restart MySql server ###";
+echo "${GREEN}\n### restart MySql server ###\n${NC}";
 service mysql restart;
 
 # show mysql status
-echo "### MySql server status: ###";
+echo "${GREEN}\n### MySql server status: ###\n${NC}";
 systemctl status mysql;
 
-echo "### install common programms: ###";
+echo "${GREEN}\n### install common programms: ###\n${NC}";
 apt-get -y install grep awk sed;
 
 # de-install all php verion
@@ -91,7 +91,7 @@ while true; do
 	esac
 done
 
-echo "### Restart Apache server ###";
+echo "${GREEN}\n### Restart Apache server ###\n${NC}";
 service apache2 restart;
 
 (echo "$php_module" | grep -Eq "^[FfBb]\$");
@@ -100,7 +100,7 @@ if [ $? -eq 0 ] ; then
 	service php$php_version-fpm restart;
 fi
 
-echo "### install php mysql packages ###";
+echo "${GREEN}\n### install php mysql packages ###\n${NC}";
 apt-get -y install php$php_version-mysql;
 
 while true; do
@@ -112,7 +112,7 @@ while true; do
 	esac
 done
 
-echo "### install additional php packages ###";
+echo "${GREEN}\n### install additional php packages ###\n${NC}";
 apt-get -y install php$php_version-xml;
 
 # regiert vor laravel
@@ -145,7 +145,7 @@ while true; do
 	esac
 done
 
-echo "### Restart Apache server ###";
+echo "${GREEN}\n### Restart Apache server ###\n${NC}";
 service apache2 restart;
 
 # Optional packages
@@ -222,10 +222,10 @@ while true; do
 done
 
 # secure mysql
-echo "### MySql secure server ###";
+echo "${GREEN}\n### MySql secure server ###\n${NC}";
 mysql_secure_installation;
 
 # secure phpMyAdmin
 if [ $is_pma_installed = true ] ; then
-	echo "${RED}### Don't forget to protect your phpmyadmin area ###${NC}";
+	echo "${RED}### Don't forget to protect your phpmyadmin area ###\n${NC}";
 fi
