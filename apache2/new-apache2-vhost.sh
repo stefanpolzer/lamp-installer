@@ -264,7 +264,7 @@ touch "$conf_file";
 conf_file_content="<VirtualHost *:80 *:443>
         ServerName $site";
 
-if [ ! "$additional_domains" = ""] ; then
+if [ ! "$additional_domains" = "" ] ; then
 	conf_file_content="$conf_file_content
         ServerAlias ${additional_domains}";
 fi
