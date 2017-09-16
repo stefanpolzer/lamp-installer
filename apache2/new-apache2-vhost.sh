@@ -11,7 +11,7 @@ NC='\033[0m';
 APACHE_LOG_DIR="/var/log/apache2";
 apache_sites_available_path="/etc/apache2/sites-available";
 regex_domain="([a-z0-9][a-z0-9-]*[a-z0-9]\.)+[a-z]{2,}";
-regex_email_name="[a-z0-9+_-](\.[a-z0-9+_-])*";
+regex_email_name="[a-z0-9+_-][a-z0-9+_.]*[a-z0-9+_-]";
 
 # check if root
 if [ "$(id -u)" -ne 0 ] ; then

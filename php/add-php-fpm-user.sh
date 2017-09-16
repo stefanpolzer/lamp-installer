@@ -127,4 +127,4 @@ if [ -f "$fpm_path/www.conf" ] ; then
 	done
 fi
 
-service php$php_version-fpm reload;
+service php$php_version-fpm restart;
