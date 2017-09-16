@@ -128,20 +128,19 @@ echo "";
 force_www=false;
 force_non_www=false;
 if [ $use_opposit_domian = true ] ; then
-	if [ $is_www_domain = true ] ; then
+	while true; do
+		read -p "Do you wish to force the www version of your site ? (Press y|Y for Yes or n|N for No) : " yn
+		case $yn in
+			[Yy] ) a2enmod rewrite; force_www=true; break;;
+			[Nn] ) break;;
+			* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+		esac
+	done
+	if [ $force_www = false ] ; then
 		while true; do
 			read -p "Do you wish to force the non www version of your site ? (Press y|Y for Yes or n|N for No) : " yn
 			case $yn in
 				[Yy] ) a2enmod rewrite; force_non_www=true; break;;
-				[Nn] ) break;;
-				* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
-			esac
-		done
-	else
-		while true; do
-			read -p "Do you wish to force the www version of your site ? (Press y|Y for Yes or n|N for No) : " yn
-			case $yn in
-				[Yy] ) a2enmod rewrite; force_www=true; break;;
 				[Nn] ) break;;
 				* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 			esac
@@ -235,11 +234,11 @@ mkdir "/var/www/$username/sites/$site" > /dev/null 2>&1;
 mkdir "/var/www/$username/sites/$site/public" > /dev/null 2>&1;
 mkdir "/var/www/$username/sites/$site/.ErrorDocuments" > /dev/null 2>&1;
 
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/coming-soon.html" -O "/var/www/$username/sites/$site/public/index.html";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error401.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/401.html";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error403.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/403.html";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error404.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/404.html";
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error500.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/500.html";
+wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/coming-soon.html" -O "/var/www/$username/sites/$site/public/index.html" > /dev/null 2>&1;
+wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error401.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/401.html" > /dev/null 2>&1;
+wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error403.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/403.html" > /dev/null 2>&1;
+wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error404.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/404.html" > /dev/null 2>&1;
+wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error500.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/500.html" > /dev/null 2>&1;
 
 chown $username:$username "/var/www/$username/sites" > /dev/null 2>&1;
 chown $username:$username -R "/var/www/$username/sites/$site" > /dev/null 2>&1;
@@ -249,7 +248,7 @@ webmaster=webmaster@$site;
 while true; do
 	read -p "Please enter the webmaster E-Mail address (used for Let's Encrypt and Apache ServerAdmin) ? : " webmaster
 	# check the email syntax
-	(echo "$site" | grep -Eq "^$regex_email_name@$regex_domain$");
+	(echo "$webmaster" | grep -Eq "^$regex_email_name@$regex_domain$");
 	if [ $? -ne 0 ] ; then
 		echo "${RED}E-Mail did not match credentials: \"some[.name]@[subdomain.]domain.tld\"${NC}";
 	else
