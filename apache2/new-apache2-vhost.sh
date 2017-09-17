@@ -124,30 +124,6 @@ done
 
 echo "";
 
-# check if we can force a domain
-force_www=false;
-force_non_www=false;
-if [ $use_opposit_domian = true ] ; then
-	while true; do
-		read -p "Do you wish to force the www version of your site ? (Press y|Y for Yes or n|N for No) : " yn
-		case $yn in
-			[Yy] ) a2enmod rewrite; force_www=true; break;;
-			[Nn] ) break;;
-			* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
-		esac
-	done
-	if [ $force_www = false ] ; then
-		while true; do
-			read -p "Do you wish to force the non www version of your site ? (Press y|Y for Yes or n|N for No) : " yn
-			case $yn in
-				[Yy] ) a2enmod rewrite; force_non_www=true; break;;
-				[Nn] ) break;;
-				* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
-			esac
-		done
-	fi
-fi
-
 ## ask for additionals domain
 while true; do
 	read -p "Do you wish to add another domain ? (Press y|Y for Yes or n|N for No) :" yn
@@ -176,6 +152,57 @@ additional_domains="$(echo $additional_domains | sed 's/$site\s\?//')";
 
 echo "";
 
+use_ssl=false;
+# check if certbot is installed
+(certbot --version > /dev/null 2>&1);
+if [ $? -eq 0 ] ;then
+	while true; do
+		read -p "Do you wish to use https with Let's Encrypt ? (Press y|Y for Yes or n|N for No) : " yn
+		case $yn in
+			[Yy] ) a2enmod ssl > /dev/null 2>&1; use_ssl=true; break;;
+			[Nn] ) break;;
+			* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+		esac
+	done
+fi
+
+# check if we can force a domain
+force_domain=false;
+while true; do
+	read -p "Do you wish to force a domain [Redirect 301] ? (Press y|Y for Yes or n|N for No) : " yn
+	case $yn in
+		[Yy] ) a2enmod rewrite > /dev/null 2>&1; force_domain=true; break;;
+		[Nn] ) break;;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+	esac
+done
+
+if [ $force_domain = true ] ; then
+	while true; do
+		read -p "Please enter the domain name you like to force: " domain
+		# check the domain syntax
+		(echo "$domain" | grep -Eq "^$regex_domain$");
+		if [ $? -ne 0 ] ; then
+			echo "${RED}Domain did not match credentials: \"[sub-domain.]domain.tld\"${NC}";
+		else
+			force_domain="$domain";
+			break;
+		fi
+	done;
+fi
+
+http="http";
+if [ $use_ssl = true ] ; then
+	while true; do
+		read -p "Do you wish to force https ? : " yn
+		case $yn in
+			[Yy] ) a2enmod rewrite > /dev/null 2>&1; http="https"; break;;
+			[Nn] ) break;;
+			* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+		esac
+	done
+fi
+
 prefix="";
 while true; do
 	read -p "Do you wish to have a number prefix for your apache2 config file? (Enter 3 digits or n|N for No) : " prefix
@@ -202,39 +229,13 @@ if [ -f "/var/www/$username/sites/$site" ] ; then
 	exit 1;
 fi
 
-use_ssl=false;
-# check if certbot is installed
-(certbot --version > /dev/null 2>&1);
-if [ $? -eq 0 ] ;then
-	while true; do
-		read -p "Do you wish to use https with Let's Encrypt ? (Press y|Y for Yes or n|N for No) : " yn
-		case $yn in
-			[Yy] ) a2enmod ssl; use_ssl=true; break;;
-			[Nn] ) break;;
-			* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
-		esac
-	done
-fi
-
-http="%{REQUEST_SCHEME}";
-if [ $use_ssl = true ] ; then
-	while true; do
-		read -p "Do you wish to force https ? : " yn
-		case $yn in
-			[Yy] ) a2enmod rewrite; http="https"; break;;
-			[Nn] ) break;;
-			* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
-		esac
-	done
-fi
-
-site=$site;
-
 mkdir "/var/www/$username/sites/$site" > /dev/null 2>&1;
 mkdir "/var/www/$username/sites/$site/public" > /dev/null 2>&1;
 mkdir "/var/www/$username/sites/$site/.ErrorDocuments" > /dev/null 2>&1;
 
 wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/coming-soon.html" -O "/var/www/$username/sites/$site/public/index.html" > /dev/null 2>&1;
+wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/.htconfig" -O "/var/www/$username/sites/$site/.ErrorDocuments/.htconfig" > /dev/null 2>&1;
+wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error400.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/400.html" > /dev/null 2>&1;
 wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error401.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/401.html" > /dev/null 2>&1;
 wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error403.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/403.html" > /dev/null 2>&1;
 wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error404.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/404.html" > /dev/null 2>&1;
@@ -261,79 +262,80 @@ chown root:adm "$APACHE_LOG_DIR/$site" > /dev/null 2>&1;
 
 touch "$conf_file";
 
-conf_file_content="<VirtualHost *:80 *:443>
-        ServerName $site";
-
-if [ ! "$additional_domains" = "" ] ; then
-	conf_file_content="$conf_file_content
-        ServerAlias ${additional_domains}";
-fi
-
-conf_file_content="$conf_file_content
-        ServerAdmin $webmaster
-
-        DocumentRoot /var/www/$username/sites/$site/public
-
-        Alias \"/.ErrorDocuments\" \"/var/www/$username/sites/$site/.ErrorDocuments\"
-        ErrorDocument 400 /.ErrorDocuments/400.html
-        ErrorDocument 401 /.ErrorDocuments/401.html
-        ErrorDocument 403 /.ErrorDocuments/403.html
-        ErrorDocument 404 /.ErrorDocuments/404.html
-        ErrorDocument 500 /.ErrorDocuments/500.html
-";
-
-if [ $http = "https" ] || [ $force_www = true ] || [ $force_non_www = true ] : then
-	conf_file_content="$conf_file_content
-        <IfModule mod_rewrite.c>
-            RewriteEngine On
-";
-fi
-
+# prepering vhost file content
 inst="";
 if [ $http = "https" ] ; then
 	inst="##INST##";
-	conf_file_content="$conf_file_content
+fi
+
+content_header_80="<VirtualHost *:80>
+        ServerName $site";
+
+content_header_443="<VirtualHost *:443>
+        ServerName $site";
+
+content_server_alias="
+        ServerAlias ${additional_domains}";
+
+content_server_admin="
+        ServerAdmin $webmaster
+";
+
+content_document_root="
+        DocumentRoot /var/www/$username/sites/$site/public
+";
+
+content_error_documents="
+        <IfModule mod_alias.c>
+            Alias \"/.ErrorDocuments\" \"/var/www/$username/sites/$site/.ErrorDocuments\"
+            Include /var/www/webdesign/sites/webdesign.goip.de/.ErrorDocuments/.htconfig
+        </IfModule>
+";
+
+content_rewite_header="
+        <IfModule mod_rewrite.c>
+            RewriteEngine On
+";
+
+content_rewite_header="
+        <IfModule mod_rewrite.c>
+            RewriteEngine On
+";
+
+content_force_domain="";
+
+if [ $http = "https" ] ; then
+	content_force_domain="
+$inst            RewriteCond %{HTTPS} !=on [OR]";
+fi
+
+content_force_domain="$content_force_domain
+$inst            RewriteCond %{HTTP_HOST} !^$force_domain$ [NC]
+$inst            RewriteRule ^/?(.*) $http://$force_domain/\$1 [R=301,L]
+";
+
+content_force_https_only="
 $inst            RewriteCond %{HTTPS} !=on
-$inst            RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+$inst            RewriteRule ^/?(.*) https://%{HTTP_HOST}/\$1 [R=301,L]
 ";
-fi
 
-if [ $force_www = true ] ; then
-	conf_file_content="$conf_file_content
-$inst            RewriteCond %{HTTP_HOST} !^www\. [NC]
-$inst            RewriteRule ^(.*)$ $http://www.%{HTTP_HOST}/\$1 [R=301,L]
-";
-fi
-
-if [ $force_non_www = true ] ; then
-	conf_file_content="$conf_file_content
-$inst            RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
-$inst            RewriteRule ^(.*)$ $http://%1/\$1 [R=301,L]
-";
-fi
-
-if [ $http = "https" ] || [ $force_www = true ] || [ $force_non_www = true ] ; then
-	conf_file_content="$conf_file_content
+content_rewite_footer="
         </IfModule>
 ";
-fi
 
-if [ $use_ssl = true ] ; then
-	conf_file_content="$conf_file_content
+content_ssl="
         <IfModule mod_ssl.c>
-$inst                SSLEngine ON
-$inst                SSLCertificateFile    /etc/letsencrypt/live/$site/fullchain.pem
-$inst                SSLCertificateKeyFile /etc/letsencrypt/live/$site/privkey.pem
+                SSLEngine ON
+                SSLCertificateFile    /etc/letsencrypt/live/$site/fullchain.pem
+                SSLCertificateKeyFile /etc/letsencrypt/live/$site/privkey.pem
 
-$inst            <FilesMatch \"\.(cgi|shtml|phtml|ph(p[57]?|t|tml))$\">
-$inst                SSLOptions +StdEnvVars
-$inst            </FilesMatch>
+            <FilesMatch \"\.(cgi|shtml|phtml|ph(p[57]?|t|tml))$\">
+                SSLOptions +StdEnvVars
+            </FilesMatch>
         </IfModule>
 ";
-fi
 
-if [ $use_php_fpm = true ] ; then
-	conf_file_content="$conf_file_content
+content_fpm="
         <IfModule mod_fastcgi.c>
             <FilesMatch \".+\.ph(p[57]?|t|tml)$\">
                 SetHandler php$php_major_version-fcgi-$username
@@ -349,9 +351,8 @@ if [ $use_php_fpm = true ] ; then
             </Directory>
         </IfModule>
 ";
-fi
 
-conf_file_content="$conf_file_content
+content_directory="
         <Directory \"/var/www/$username/sites/$site/public\">
                 Options -Indexes +FollowSymLinks
                 Require all granted
@@ -360,13 +361,100 @@ conf_file_content="$conf_file_content
                 Order Allow,Deny
                 Allow from all
         </Directory>
+";
 
+content_footer="
         ErrorLog \${APACHE_LOG_DIR}/$site/error.log
         CustomLog \${APACHE_LOG_DIR}/$site/access.log combined
 </VirtualHost>
 ";
 
-echo "$conf_file_content" > "$conf_file";
+# assembling vhost file content
+file_content=$content_header_80;
+
+if [ ! "$additional_domains" = "" ] ; then
+	file_content=$file_content$content_server_alias;
+fi
+
+file_content=$file_content$content_server_admin;
+
+if [ $http = "https" ] ; then
+	file_content="$file_content#$inst+";
+fi
+
+file_content=$file_content$content_document_root;
+
+if [ $http = "https" ] ; then
+	file_content="$file_content#$inst-
+";
+fi
+
+file_content=$file_content$content_error_documents;
+
+if [ $http = "https" ] || [ ! $force_domain = false ] ; then
+	file_content=$file_content$content_rewite_header;
+fi
+
+if [ ! $force_domain = false ] ; then
+	file_content=$file_content$content_force_domain;
+fi
+
+if [ $force_domain = false ] && [ $http = "https" ] ; then
+	file_content=$file_content$content_force_https_only;
+fi
+
+if [ $http = "https" ] || [ ! $force_domain = false ] ; then
+	file_content=$file_content$content_rewite_footer;
+fi
+
+if [ ! $http = "https" ] && [ $use_php_fpm = true ] ; then
+	file_content=$file_content$content_fpm;
+fi
+
+if [ $http = "https" ] ; then
+	file_content="$file_content#$inst+";
+fi
+
+file_content=$file_content$content_directory;
+
+if [ $http = "https" ] ; then
+	file_content="$file_content#$inst-
+";
+fi
+
+file_content=$file_content$content_footer;
+
+if [ $use_ssl = true ] ; then
+	file_content=$file_content$content_header_443;
+
+	if [ ! "$additional_domains" = "" ] ; then
+		file_content=$file_content$content_server_alias;
+	fi
+
+	file_content=$file_content$content_server_admin;
+
+	file_content=$file_content$content_document_root;
+	file_content=$file_content$content_error_documents;
+
+	if [ ! $force_domain = false ] ; then
+		file_content=$file_content$content_rewite_header;
+		content_force_domain="$(echo "$content_force_domain" | sed 's/http:/https:/')";
+		file_content=$file_content$content_force_domain;
+		file_content=$file_content$content_rewite_footer;
+	fi
+
+	file_content=$file_content$content_ssl;
+
+	if [ ! $http = "https" ] && [ $use_php_fpm = true ] ; then
+		file_content=$file_content$content_fpm;
+	fi
+
+	file_content=$file_content$content_directory;
+
+	file_content=$file_content$content_footer;
+fi
+
+echo "$file_content" > "$conf_file";
 
 a2ensite "$prefix$site.conf" > /dev/null 2>&1;
 
@@ -384,15 +472,26 @@ fi
 service apache2 reload;
 
 # run certbot and enable https
-additional_domains_cert="$(echo $additional_domains | sed 's/\s\+/-d /')"
-certbot_command="certbot certonly --webroot -n --agree-tos -m $webmaster -w /var/www/$username/sites/$site/public -d $site -d $additional_domains_cert";
+additional_domains_cert=""
+if [ ! "$additional_domains" = "" ] ; then
+	additional_domains_cert="$(echo $additional_domains | sed 's/\s\+/ -d /')";
+	additional_domains_cert=" -d $additional_domains_cert";
+fi
+
+certbot_command="certbot certonly --webroot -n --agree-tos -m $webmaster -w /var/www/$username/sites/$site/public -d $site$additional_domains_cert";
 
 if [ $use_ssl = true ] ; then
 	while true; do
-		read -p "Are all domains A, AAAA or CNAME records ponting to this server  ? (Press y|Y for Yes or n|N for No) :" yn
+		read -p "Are all domains A, AAAA or CNAME records ponting already to this server ? (Press y|Y for Yes or n|N for No) :" yn
 		case $yn in
-			[Yy] ) ($certbot_command); sed -i "'s/^$inst//'" $conf_file; service apache2 reload; break;;
-			[Nn] ) echo "No Problem. After you have done this, call the following command:\n${GREEN}$certbot_command${NC}"; break;;
+			[Yy] ) ($certbot_command); sed -i "s/^$inst//" $conf_file; sed -i "/#$inst+/,/#$inst-/d" $conf_file; service apache2 reload; break;;
+			[Nn] )
+				echo "No Problem. After you have done this, call the following commands:"
+				echo "${GREEN}sudo $certbot_command${NC}";
+				echo "${GREEN}sudo sed -i \"s/^$inst//\" $conf_file${NC}";
+				echo "${GREEN}sudo sed -i \"/#$inst+/,/#$inst-/d\" $conf_file${NC}";
+				echo "${GREEN}sudo service apache2 reload${NC}";
+				break;;
 			* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 		esac
 	done
