@@ -324,15 +324,15 @@ content_rewite_footer="
 ";
 
 content_ssl="
-        <IfModule mod_ssl.c>
-                SSLEngine ON
-                SSLCertificateFile    /etc/letsencrypt/live/$site/fullchain.pem
-                SSLCertificateKeyFile /etc/letsencrypt/live/$site/privkey.pem
+$inst        <IfModule mod_ssl.c>
+$inst                SSLEngine ON
+$inst                SSLCertificateFile    /etc/letsencrypt/live/$site/fullchain.pem
+$inst                SSLCertificateKeyFile /etc/letsencrypt/live/$site/privkey.pem
 
-            <FilesMatch \"\.(cgi|shtml|phtml|ph(p[57]?|t|tml))$\">
-                SSLOptions +StdEnvVars
-            </FilesMatch>
-        </IfModule>
+$inst            <FilesMatch \"\.(cgi|shtml|phtml|ph(p[57]?|t|tml))$\">
+$inst                SSLOptions +StdEnvVars
+$inst            </FilesMatch>
+$inst        </IfModule>
 ";
 
 content_fpm="
@@ -469,18 +469,16 @@ if [ -f "/etc/apache2/sites-enabled/000-default.conf" ] ; then
 	done
 fi
 
-service apache2 reload;
-
-# run certbot and enable https
-additional_domains_cert=""
-if [ ! "$additional_domains" = "" ] ; then
-	additional_domains_cert="$(echo $additional_domains | sed 's/\s\+/ -d /')";
-	additional_domains_cert=" -d $additional_domains_cert";
-fi
-
-certbot_command="certbot certonly --webroot -n --agree-tos -m $webmaster -w /var/www/$username/sites/$site/public -d $site$additional_domains_cert";
-
 if [ $use_ssl = true ] ; then
+	# prepare certbot
+	additional_domains_cert=""
+	if [ ! "$additional_domains" = "" ] ; then
+		additional_domains_cert="$(echo $additional_domains | sed 's/\s\+/ -d /')";
+		additional_domains_cert=" -d $additional_domains_cert";
+	fi
+
+	certbot_command="certbot certonly --webroot -n --agree-tos -m $webmaster -w /var/www/$username/sites/$site/public -d $site$additional_domains_cert";
+
 	while true; do
 		read -p "Are all domains A, AAAA or CNAME records ponting already to this server ? (Press y|Y for Yes or n|N for No) :" yn
 		case $yn in
@@ -495,4 +493,6 @@ if [ $use_ssl = true ] ; then
 			* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 		esac
 	done
+else
+	service apache2 reload;
 fi
