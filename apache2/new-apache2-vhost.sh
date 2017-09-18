@@ -234,12 +234,15 @@ mkdir "/var/www/$username/sites/$site/public" > /dev/null 2>&1;
 mkdir "/var/www/$username/sites/$site/.ErrorDocuments" > /dev/null 2>&1;
 
 wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/coming-soon.html" -O "/var/www/$username/sites/$site/public/index.html" > /dev/null 2>&1;
-wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/.htconfig" -O "/var/www/$username/sites/$site/.ErrorDocuments/.htconfig" > /dev/null 2>&1;
 wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error400.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/400.html" > /dev/null 2>&1;
 wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error401.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/401.html" > /dev/null 2>&1;
 wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error403.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/403.html" > /dev/null 2>&1;
 wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error404.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/404.html" > /dev/null 2>&1;
 wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error500.html" -O "/var/www/$username/sites/$site/.ErrorDocuments/500.html" > /dev/null 2>&1;
+
+if [ ! -f "/etc/apache2/error.conf" ] ; then
+	wget "https://raw.githubusercontent.com/stefanpolzer/lamp-installer/master/apache2/html/error.conf" -O "/etc/apache2/error.conf" > /dev/null 2>&1;
+fi
 
 chown $username:$username "/var/www/$username/sites" > /dev/null 2>&1;
 chown $username:$username -R "/var/www/$username/sites/$site" > /dev/null 2>&1;
@@ -263,110 +266,110 @@ chown root:adm "$APACHE_LOG_DIR/$site" > /dev/null 2>&1;
 touch "$conf_file";
 
 # prepering vhost file content
-inst="";
+inst="##INST##";
+temp=""
 if [ $http = "https" ] ; then
-	inst="##INST##";
+	temp=$inst;
 fi
 
 content_header_80="<VirtualHost *:80>
-        ServerName $site";
+    ServerName $site";
 
 content_header_443="<VirtualHost *:443>
-        ServerName $site";
+    ServerName $site";
 
 content_server_alias="
-        ServerAlias ${additional_domains}";
+    ServerAlias ${additional_domains}";
 
 content_server_admin="
-        ServerAdmin $webmaster
+    ServerAdmin $webmaster
 ";
 
 content_document_root="
-        DocumentRoot /var/www/$username/sites/$site/public
+    DocumentRoot /var/www/$username/sites/$site/public
 ";
 
 content_error_documents="
-        <IfModule mod_alias.c>
-            Alias \"/.ErrorDocuments\" \"/var/www/$username/sites/$site/.ErrorDocuments\"
-            Include /var/www/webdesign/sites/webdesign.goip.de/.ErrorDocuments/.htconfig
-        </IfModule>
+    <IfModule mod_alias.c>
+        Alias \"/.ErrorDocuments\" \"/var/www/$username/sites/$site/.ErrorDocuments\"
+        Include /etc/apache2/error.conf
+    </IfModule>
 ";
 
 content_rewite_header="
-        <IfModule mod_rewrite.c>
-            RewriteEngine On
+    <IfModule mod_rewrite.c>
+        RewriteEngine On
 ";
 
 content_rewite_header="
-        <IfModule mod_rewrite.c>
-            RewriteEngine On
+    <IfModule mod_rewrite.c>
+        RewriteEngine On
 ";
 
-content_force_domain="";
+content_force_https="
+$temp        RewriteCond %{HTTPS} !=on [OR]";
 
-if [ $http = "https" ] ; then
-	content_force_domain="
-$inst            RewriteCond %{HTTPS} !=on [OR]";
-fi
-
-content_force_domain="$content_force_domain
-$inst            RewriteCond %{HTTP_HOST} !^$force_domain$ [NC]
-$inst            RewriteRule ^/?(.*) $http://$force_domain/\$1 [R=301,L]
+content_force_domain="
+$temp        RewriteCond %{HTTP_HOST} !^$force_domain$ [NC]
+$temp        RewriteRule ^/?(.*) $http://$force_domain/\$1 [R=301,L]
 ";
 
 content_force_https_only="
-$inst            RewriteCond %{HTTPS} !=on
-$inst            RewriteRule ^/?(.*) https://%{HTTP_HOST}/\$1 [R=301,L]
+$temp        RewriteCond %{HTTPS} !=on
+$temp        RewriteRule ^/?(.*) https://%{HTTP_HOST}/\$1 [R=301,L]
 ";
 
 content_rewite_footer="
-        </IfModule>
+    </IfModule>
 ";
 
 content_ssl="
-$inst        <IfModule mod_ssl.c>
-$inst                SSLEngine ON
-$inst                SSLCertificateFile    /etc/letsencrypt/live/$site/fullchain.pem
-$inst                SSLCertificateKeyFile /etc/letsencrypt/live/$site/privkey.pem
+$inst    <IfModule mod_ssl.c>
+$inst        SSLEngine ON
+$inst        SSLCertificateFile    /etc/letsencrypt/live/$site/fullchain.pem
+$inst        SSLCertificateKeyFile /etc/letsencrypt/live/$site/privkey.pem
 
-$inst            <FilesMatch \"\.(cgi|shtml|phtml|ph(p[57]?|t|tml))$\">
-$inst                SSLOptions +StdEnvVars
-$inst            </FilesMatch>
-$inst        </IfModule>
-";
-
-content_fpm="
-        <IfModule mod_fastcgi.c>
-            <FilesMatch \".+\.ph(p[57]?|t|tml)$\">
-                SetHandler php$php_major_version-fcgi-$username
-            </FilesMatch>
-
-            AddHandler php$php_major_version-fcgi-$username .php
-            Action php$php_major_version-fcgi-$username /php$php_major_version-fcgi-$username
-            Alias /php$php_major_version-fcgi-$username /usr/lib/cgi-bin/php$php_major_version-fcgi-$username
-            FastCgiExternalServer /usr/lib/cgi-bin/php$php_major_version-fcgi-$username -socket /run/php/php$php_version-fpm.$username.sock -pass-header Authorization
-
-            <Directory \"/usr/lib/cgi-bin\">
-                Require all granted
-            </Directory>
-        </IfModule>
+$inst        <FilesMatch \"\.(cgi|shtml|phtml|ph(p[57]?|t|tml))$\">
+$inst            SSLOptions +StdEnvVars
+$inst        </FilesMatch>
+$inst    </IfModule>
 ";
 
 content_directory="
-        <Directory \"/var/www/$username/sites/$site/public\">
-                Options -Indexes +FollowSymLinks
-                Require all granted
-                AllowOverride All
+    <Directory \"/var/www/$username/sites/$site/public\">
+        Options -Indexes +FollowSymLinks
+        Require all granted
+        AllowOverride All
 
-                Order Allow,Deny
-                Allow from all
+        Order Allow,Deny
+        Allow from all
+    </Directory>
+";
+
+content_fpm_user="
+    <IfModule mod_fastcgi.c>
+        <FilesMatch \".+\.ph(p[57]?|t|tml)$\">
+            SetHandler php$php_major_version-fcgi-$username
+        </FilesMatch>
+        <Directory \"/usr/lib/cgi-bin\">
+            Require all granted
         </Directory>
+    </IfModule>
 ";
 
 content_footer="
-        ErrorLog \${APACHE_LOG_DIR}/$site/error.log
-        CustomLog \${APACHE_LOG_DIR}/$site/access.log combined
+    ErrorLog \${APACHE_LOG_DIR}/$site/error.log
+    CustomLog \${APACHE_LOG_DIR}/$site/access.log combined
 </VirtualHost>
+";
+
+content_fpm="
+<IfModule mod_fastcgi.c>
+    AddHandler php$php_major_version-fcgi-$username .php
+    Action php$php_major_version-fcgi-$username /php$php_major_version-fcgi-$username
+    Alias /php$php_major_version-fcgi-$username /usr/lib/cgi-bin/php$php_major_version-fcgi-$username
+    FastCgiExternalServer /usr/lib/cgi-bin/php$php_major_version-fcgi-$username -socket /run/php/php$php_version-fpm.$username.sock -pass-header Authorization
+</IfModule>
 ";
 
 # assembling vhost file content
@@ -395,6 +398,10 @@ if [ $http = "https" ] || [ ! $force_domain = false ] ; then
 	file_content=$file_content$content_rewite_header;
 fi
 
+if [ $http = "https" ] ; then
+	file_content=$file_content$content_force_https;
+fi
+
 if [ ! $force_domain = false ] ; then
 	file_content=$file_content$content_force_domain;
 fi
@@ -407,10 +414,6 @@ if [ $http = "https" ] || [ ! $force_domain = false ] ; then
 	file_content=$file_content$content_rewite_footer;
 fi
 
-if [ ! $http = "https" ] && [ $use_php_fpm = true ] ; then
-	file_content=$file_content$content_fpm;
-fi
-
 if [ $http = "https" ] ; then
 	file_content="$file_content#$inst+";
 fi
@@ -420,6 +423,10 @@ file_content=$file_content$content_directory;
 if [ $http = "https" ] ; then
 	file_content="$file_content#$inst-
 ";
+fi
+
+if [ $http = "http" ] && [ $use_php_fpm = true ] ; then
+	file_content=$file_content$content_fpm_user;
 fi
 
 file_content=$file_content$content_footer;
@@ -438,6 +445,12 @@ if [ $use_ssl = true ] ; then
 
 	if [ ! $force_domain = false ] ; then
 		file_content=$file_content$content_rewite_header;
+
+		if [ $http = "https" ] ; then
+			content_force_https="$(echo "$content_force_https" | sed 's/!=on \[OR\]/=on/')";
+			file_content=$file_content$content_force_https;
+		fi
+
 		content_force_domain="$(echo "$content_force_domain" | sed 's/http:/https:/')";
 		file_content=$file_content$content_force_domain;
 		file_content=$file_content$content_rewite_footer;
@@ -445,13 +458,17 @@ if [ $use_ssl = true ] ; then
 
 	file_content=$file_content$content_ssl;
 
-	if [ ! $http = "https" ] && [ $use_php_fpm = true ] ; then
-		file_content=$file_content$content_fpm;
-	fi
-
 	file_content=$file_content$content_directory;
 
+	if [ $use_php_fpm = true ] ; then
+		file_content=$file_content$content_fpm_user;
+	fi
+
 	file_content=$file_content$content_footer;
+fi
+
+if [ $use_php_fpm = true ] ; then
+	file_content=$file_content$content_fpm;
 fi
 
 echo "$file_content" > "$conf_file";
@@ -469,6 +486,8 @@ if [ -f "/etc/apache2/sites-enabled/000-default.conf" ] ; then
 	done
 fi
 
+service apache2 reload;
+
 if [ $use_ssl = true ] ; then
 	# prepare certbot
 	additional_domains_cert=""
@@ -482,7 +501,13 @@ if [ $use_ssl = true ] ; then
 	while true; do
 		read -p "Are all domains A, AAAA or CNAME records ponting already to this server ? (Press y|Y for Yes or n|N for No) :" yn
 		case $yn in
-			[Yy] ) ($certbot_command); sed -i "s/^$inst//" $conf_file; sed -i "/#$inst+/,/#$inst-/d" $conf_file; service apache2 reload; break;;
+			[Yy] ) 
+				($certbot_command);
+				sed -i "s/^$inst//" $conf_file;
+				sed -i "/#$inst+/,/#$inst-/d" $conf_file;
+				service apache2 reload;
+				rm -r "/var/www/$username/sites/$site/public/.well-known/";
+				break;;
 			[Nn] )
 				echo "No Problem. After you have done this, call the following commands:"
 				echo "${GREEN}sudo $certbot_command${NC}";
@@ -493,6 +518,4 @@ if [ $use_ssl = true ] ; then
 			* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 		esac
 	done
-else
-	service apache2 reload;
 fi

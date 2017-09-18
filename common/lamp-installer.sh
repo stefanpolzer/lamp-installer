@@ -61,19 +61,24 @@ for i in "$@" ; do
 			php_version="$(php -r '$v = phpversion(); echo substr($v, 0,3);')";
 		fi
 
-		echo "${RED}################### -- ATTENTION -- ###################";
-		echo "# ${NC}If you continue this cannot be reversed${RED}             #";
-		echo "# ${NC}This will delete all custom files and folders at:${RED}   #";
-		echo "# ${NC}/var/www/${RED}                                           #";
+		echo "${RED}#######################################################";
+		echo "# DO NOT USE THIS COMMAND ON A PRODUCTION ENVIRONMENT #";
+		echo "#######################################################";
+		echo "# -------------------- ATTENTION -------------------- #";
+		echo "# ${NC}If you continue this cannot be reversed!${RED}            #";
+		echo "# ${NC}This will delete all files and folders at:${RED}          #";
 		echo "# ${NC}/etc/apache2/sites-available/${RED}                       #";
 		echo "# ${NC}/etc/apache2/sites-enabled/${RED}                         #";
+		echo "# ${NC}/etc/letsencrypt/${RED}                                   #";
 		if [ $php_major_version = "7" ] ; then
 			echo "# ${NC}/etc/php/$php_version/fpm/pool.d/${RED}                            #";
 		fi
 		if [ $php_major_version = "5" ] ; then
 			echo "# ${NC}/etc/php$php_version/fpm/pool.d/${RED}                               #";
 		fi
-		echo "################### -- ATTENTION -- ###################";
+		echo "# ${NC}/var/www/${RED}                                           #";
+		echo "# -------------------- ATTENTION -------------------- #";
+		echo "#######################################################";
 		echo "${NC}";
 
 		while true; do
@@ -83,6 +88,7 @@ for i in "$@" ; do
 					find /var/www/* ! -name 'html' -type d -exec rm -r -f {} + > /dev/null 2>&1;
 					find /etc/apache2/sites-enabled/*.conf ! -name '000-default.conf' ! -name 'default-ssl.conf' -type l -exec rm -f {} + > /dev/null 2>&1;
 					find /etc/apache2/sites-available/*.conf ! -name '000-default.conf' ! -name 'default-ssl.conf' -type f -exec rm -f {} + > /dev/null 2>&1;
+					find /etc/letsencrypt/* -type d -exec rm -r -f {} + > /dev/null 2>&1;
 					if [ $php_major_version = "7" ] ; then
 						find /etc/php/$php_version/fpm/pool.d/*.conf ! -name 'www.conf' -type f -exec rm -f {} + > /dev/null 2>&1;
 						service php$php_version-fpm reload > /dev/null 2>&1;
