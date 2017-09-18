@@ -168,14 +168,16 @@ fi
 
 # check if we can force a domain
 force_domain=false;
-while true; do
-	read -p "Do you wish to force a domain [Redirect 301] ? (Press y|Y for Yes or n|N for No) : " yn
-	case $yn in
-		[Yy] ) a2enmod rewrite > /dev/null 2>&1; force_domain=true; break;;
-		[Nn] ) break;;
-		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
-	esac
-done
+if [ ! "$additional_domains" = "" ] ; then
+	while true; do
+		read -p "Do you wish to force a domain [Redirect 301] ? (Press y|Y for Yes or n|N for No) : " yn
+		case $yn in
+			[Yy] ) a2enmod rewrite > /dev/null 2>&1; force_domain=true; break;;
+			[Nn] ) break;;
+			* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+		esac
+	done
+fi
 
 if [ $force_domain = true ] ; then
 	while true; do
