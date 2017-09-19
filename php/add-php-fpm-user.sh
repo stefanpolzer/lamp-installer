@@ -9,6 +9,7 @@ NC='\033[0m';
 
 # configuration:
 web_root="/var/www";
+apache2_conf_dir="/etc/apache2/conf-available";
 
 # check if root
 if [ "$(id -u)" -ne 0 ] ; then
@@ -71,7 +72,7 @@ else
 fi
 
 chown root:$username $home_dir;
-chmod 775 $home_dir;
+chmod 755 $home_dir;
 
 # set password for user
 while true; do
@@ -112,7 +113,8 @@ if [ ! -f "$fpm_file" ]; then
     pm.max_children = 5
     pm.start_servers = 2
     pm.min_spare_servers = 1
-    pm.max_spare_servers = 3";
+    pm.max_spare_servers = 3
+";
 	echo "$fpm_file_content" > "$fpm_file";
 fi
 
@@ -128,3 +130,23 @@ if [ -f "$fpm_path/www.conf" ] ; then
 fi
 
 service php$php_version-fpm restart;
+
+## Add apache2 php-fpm user config if not exit
+apache2_conf_name="php$php_version-fpm.$username";
+apache2_conf_file="$apache2_conf_dir/$apache2_conf_name.conf";
+
+if [ ! -f "$apache2_conf_file" ]; then
+	touch "$apache2_conf_file";
+	apache2_conf_content="
+<IfModule mod_fastcgi.c>
+    AddHandler php$php_major_version-fcgi-$username .php
+    Action php$php_major_version-fcgi-$username /php$php_major_version-fcgi-$username
+    Alias /php$php_major_version-fcgi-$username /usr/lib/cgi-bin/php$php_major_version-fcgi-$username
+    FastCgiExternalServer /usr/lib/cgi-bin/php$php_major_version-fcgi-$username -socket /run/php/php$php_version-fpm.$username.sock -pass-header Authorization
+</IfModule>
+";
+	echo "$apache2_conf_content" > "$apache2_conf_file";
+	a2enconf $apache2_conf_name > /dev/null 2>&1;
+	service apache2 restart > /dev/null 2>&1;
+	exit $?
+fi

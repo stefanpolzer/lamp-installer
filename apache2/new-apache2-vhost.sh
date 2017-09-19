@@ -365,15 +365,6 @@ content_footer="
 </VirtualHost>
 ";
 
-content_fpm="
-<IfModule mod_fastcgi.c>
-    AddHandler php$php_major_version-fcgi-$username .php
-    Action php$php_major_version-fcgi-$username /php$php_major_version-fcgi-$username
-    Alias /php$php_major_version-fcgi-$username /usr/lib/cgi-bin/php$php_major_version-fcgi-$username
-    FastCgiExternalServer /usr/lib/cgi-bin/php$php_major_version-fcgi-$username -socket /run/php/php$php_version-fpm.$username.sock -pass-header Authorization
-</IfModule>
-";
-
 # assembling vhost file content
 file_content=$content_header_80;
 
@@ -467,10 +458,6 @@ if [ $use_ssl = true ] ; then
 	fi
 
 	file_content=$file_content$content_footer;
-fi
-
-if [ $use_php_fpm = true ] ; then
-	file_content=$file_content$content_fpm;
 fi
 
 echo "$file_content" > "$conf_file";
