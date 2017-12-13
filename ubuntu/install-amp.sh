@@ -21,6 +21,16 @@ apt-get -y update;
 echo "${GREEN}\n### update curent system ###\n${NC}";
 apt-get -y dist-upgrade;
 
+# add repoisoty
+while true; do
+	read -p "Do you wish add repository ppa:ondrej/apache2 [requiert for HTTP/2.0]? (Press y|Y for Yes or n|N for No) : " yn
+	case $yn in
+		[Yy] ) add-apt-repository ppa:ondrej/apache2; apt-get update; break;;
+		[Nn] ) break;;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+	esac
+done
+
 # install apache2.4+
 echo "${GREEN}\n### install Apache2.4+ ###\n${NC}";
 apt-get -y install apache2;
@@ -53,9 +63,9 @@ done
 # add repoisoty
 php_version="7.0";
 while true; do
-	read -p "Do you wish add repository ppa:ondrej/php [requiert for php 7.1]? (Press y|Y for Yes or n|N for No) : " yn
+	read -p "Do you wish add repository ppa:ondrej/php [requiert for php 7.2]? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
-		[Yy] ) add-apt-repository ppa:ondrej/php; apt-get update; php_version="7.1"; break;;
+		[Yy] ) add-apt-repository ppa:ondrej/php; apt-get update; php_version="7.2"; break;;
 		[Nn] ) break;;
 		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 	esac
@@ -155,6 +165,16 @@ while true; do
 	read -p "Do you wish to install vim? (Press y|Y for Yes or n|N for No) : " yn
 	case $yn in
 		[Yy] ) apt-get -y install vim; break;;
+		[Nn] ) break;;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+	esac
+done
+
+# install postfix
+while true; do
+	read -p "Do you wish to install postfix? (Press y|Y for Yes or n|N for No) : " yn
+	case $yn in
+		[Yy] ) apt-get -y install postfix; break;;
 		[Nn] ) break;;
 		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
 	esac

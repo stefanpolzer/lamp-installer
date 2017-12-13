@@ -53,7 +53,6 @@ while true; do
 	fi
 done
 
-
 # Check if we want to use php-fpm
 use_php_fpm=false;
 while true; do
@@ -80,6 +79,16 @@ if [ $use_php_fpm = true ] ; then
 fi
 
 echo "";
+
+use_http2=false;
+while true; do
+	read -p "Do you wish to use HTTP/2.0 ? (Press y|Y for Yes or n|N for No) :" yn
+	case $yn in
+		[Yy] ) a2enmod http2; use_http2=true; break;;
+		[Nn] ) break;;
+		* ) echo "${RED}Please answer [y] for yes or [n] for no.${NC}";;
+	esac
+done
 
 # Get site name
 site="";
@@ -280,6 +289,12 @@ content_header_80="<VirtualHost *:80>
 content_header_443="<VirtualHost *:443>
     ServerName $site";
 
+content_protocol_h2="
+    Protocols h2 http/1.1";
+
+content_protocol_h2c="
+    Protocols h2c http/1.1";
+
 content_server_alias="
     ServerAlias ${additional_domains}";
 
@@ -371,6 +386,10 @@ content_footer="
 # assembling vhost file content
 file_content=$content_header_80;
 
+if [ $use_http2 = true ] ; then
+	file_content=$file_content$content_protocol_h2c;
+fi
+
 if [ ! "$additional_domains" = "" ] ; then
 	file_content=$file_content$content_server_alias;
 fi
@@ -429,6 +448,10 @@ file_content=$file_content$content_footer;
 
 if [ $use_ssl = true ] ; then
 	file_content=$file_content$content_header_443;
+
+	if [ $use_http2 = true ] ; then
+		file_content=$file_content$content_protocol_h2;
+	fi
 
 	if [ ! "$additional_domains" = "" ] ; then
 		file_content=$file_content$content_server_alias;
